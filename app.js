@@ -1,4 +1,29 @@
 var express = require('express');
+var app = express();
+var server = require('http').Server(app);
+var io = require('socket.io').listen(server);
+
+app.use(express.static(__dirname + '/public'));
+server.listen(3000, function(){
+  console.log('listening on *:3000');
+});
+
+io.on('connection', function(socket){
+  socket.on('click', function(index){
+    console.log('message: ' + index);
+    socket.broadcast.emit('clicked', index);
+  });
+
+  socket.on('disconnect', function(){
+    console.log('user disconnected');
+  });
+
+  socket.broadcast.emit('hi');
+});
+
+
+
+/*var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -54,7 +79,7 @@ app.use(function(err, req, res, next) {
     message: err.message,
     error: {}
   });
-});
+});*/
 
 
-module.exports = app;
+//module.exports = app;
