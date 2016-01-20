@@ -2,84 +2,55 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
+var GovnoGame = require('./models/govno-game.js');
+
+var Game = new GovnoGame(),
+    countGames = 0;
 
 app.use(express.static(__dirname + '/public'));
-server.listen(3000, function(){
-  console.log('listening on *:3000');
+server.listen(3000, function () {
+    console.log('listening on *:3000');
 });
 
-io.on('connection', function(socket){
-  socket.on('click', function(index){
-    console.log('message: ' + index);
-    socket.broadcast.emit('clicked', index);
-  });
+io.on('connection', function (socket) {
 
-  socket.on('disconnect', function(){
-    console.log('user disconnected');
-  });
+    socket.on("start", function () {
+        Game.start(socket.id).then(function (game) {
+            if (!game.waiting) {
+                socket.join(game.id);
+                io.sockets.connected[game.opponent.id].join(game.id);
 
-  socket.broadcast.emit('hi');
-});
-
-
-
-/*var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-
-var routes = require('./routes/index');
-var users = require('./routes/users');
-
-var app = express();
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
-
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/', routes);
-app.use('/users', users);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
-
-// error handlers
-
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: err
+                io.in(game.id).emit("ready", game);
+                countGames++;
+            } else {
+                socket.emit("wait");
+            }
+        });
     });
-  });
-}
 
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
-  });
-});*/
+    function closeRoom(gameId, opponentId) {
+        socket.leave(gameId);
+        io.connected[opponentId].leave(gameId);
+        countGames--;
+    }
 
+    socket.on('click', function (gameId, index) {
+        if (Game.games[gameId] === undefined) return;
+        var game = Game.games[gameId];
+        game.step(index, socket.id).then(function(data) {
+            io.in(gameId).emit('clicked', data);
+        });
 
-//module.exports = app;
+    });
+
+    socket.on('disconnect', function () {
+        console.log('user disconnected');
+        Game.end(socket.id.toString()).then(function(data) {
+            io.sockets.connected[data.opponentId].emit("opponent-disc");
+            closeRoom(data.gameId, data.opponentId);
+        })
+    });
+
+    socket.broadcast.emit('hi');
+});
+
