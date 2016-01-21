@@ -3,7 +3,7 @@ var GovnoGame = {
     gameOverlay: null,
     init: function () {
         var self = this;
-        var socket = this.socket = io.connect("http://172.16.16.53" + ":3000");
+        var socket = this.socket = io.connect(window.location.origin);
         this.gameOverlay = $(".game-start-overlay");
 
         $("#findGame").on("click", function () {
