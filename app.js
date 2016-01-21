@@ -8,7 +8,7 @@ var Game = new GovnoGame(),
     countGames = 0;
 
 app.use(express.static(__dirname + '/public'));
-server.listen(3000, function () {
+server.listen( (process.env.PORT || 3000), function () {
     console.log('listening on *:3000');
 });
 
