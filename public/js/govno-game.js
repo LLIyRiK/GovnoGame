@@ -3,6 +3,7 @@ var GovnoGame = {
     gameOverlay: null,
     init: function () {
         var self = this;
+        //var socket = this.socket = io.connect("https://frozen-mountain-53156.herokuapp.com");
         var socket = this.socket = io.connect(window.location.origin);
         this.gameOverlay = $(".game-start-overlay");
 
@@ -121,3 +122,7 @@ var GovnoGame = {
         this.gameOverlay.find(".text").show().text(text);
     }
 };
+
+$(function () {
+    GovnoGame.init();
+});
