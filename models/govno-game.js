@@ -33,8 +33,8 @@ var GameItem = function(userId, opponentId) {
            return this.opponent;
        }
     };
-    this.row = 30;
-    this.cell = 20;
+    this.row = 15;
+    this.cell = 10;
     this.gameBoard = new Array(this.row * this.cell);
     this.gameBoard.fill(false);
 };
